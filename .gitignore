@@ -1,0 +1,11 @@
+# Secrets 폴더 (시크릿 값 절대 커밋 금지)
+/secrets/
+
+# 백업 파일
+**/*.bak
+
+# Node.js 종속성
+node_modules/
+
+# Docker 볼륨 등
+*.log

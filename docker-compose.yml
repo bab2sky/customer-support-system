@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+    secrets:
+      - db_root_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mcp/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "3306:3306"
+
+  qdrant:
+    image: qdrant/qdrant:latest
+    volumes:
+      - qdrant_data:/qdrant/storage
+    ports:
+      - "6333:6333"
+
+  mcp-server:
+    build: ./mcp
+    env_file: ./mcp/.env
+    secrets:
+      - api_key
+      - db_root_password
+    depends_on:
+      - mysql
+    ports:
+      - "3000:3000"
+
+  rag-server:
+    build: ./rag_server
+    env_file: ./rag_server/.env
+    secrets:
+      - api_key
+      - openai_key
+    depends_on:
+      - qdrant
+    ports:
+      - "5050:5050"
+
+  gpt-backend:
+    build: ./backend
+    env_file: ./backend/.env
+    secrets:
+      - api_key
+      - openai_key
+      - smtp_pass
+      - telegram_token
+      - telegram_chat_id
+    depends_on:
+      - mcp-server
+      - rag-server
+    ports:
+      - "4000:4000"
+
+  n8n:
+    image: n8nio/n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n:/home/node/.n8n
+
+  client:
+    build: ./client
+    ports:
+      - "3001:80"
+    depends_on:
+      - gpt-backend
+
+volumes:
+  mysql_data:
+  qdrant_data:
+
+secrets:
+  api_key:
+    file: ./secrets/api_key
+  openai_key:
+    file: ./secrets/openai_key
+  db_root_password:
+    file: ./secrets/db_root_password
+  smtp_pass:
+    file: ./secrets/smtp_pass
+  telegram_token:
+    file: ./secrets/telegram_token
+  telegram_chat_id:
+    file: ./secrets/telegram_chat_id

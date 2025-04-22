@@ -1,0 +1,77 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "cronExpression": "0 * * * *"
+      },
+      "name": "Every Hour",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [250, 200]
+    },
+    {
+      "parameters": {
+        "connection": "MCP MySQL",
+        "query": "SELECT ticket_id FROM tickets WHERE status='pending'"
+      },
+      "name": "Get Pending Tickets",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [450, 200]
+    },
+    {
+      "parameters": {
+        "functionCode": "return items.map(item => ({ json: { ticket_id: item.json.ticket_id, assigned_to: 'agent1', status: 'in_progress' } }));"
+      },
+      "name": "Assign Agent",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [650, 200]
+    },
+    {
+      "parameters": {
+        "connection": "MCP MySQL",
+        "query": "UPDATE tickets SET assigned_to = :assigned_to, status = :status WHERE ticket_id = :ticket_id",
+        "queryParamsUi": {
+          "parameter": [
+            {"name": "assigned_to", "value": "={{$json.assigned_to}}"},
+            {"name": "status", "value": "={{$json.status}}"},
+            {"name": "ticket_id", "value": "={{$json.ticket_id}}"}
+          ]
+        }
+      },
+      "name": "Update Ticket",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 1,
+      "position": [850, 200]
+    },
+    {
+      "parameters": {
+        "authentication": "headerAuth",
+        "url": "https://hooks.slack.com/services/T000/B000/XXXX",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={ "text": "Ticket {{$json.ticket_id}} assigned to {{$json.assigned_to}}" }"
+      },
+      "name": "Notify Slack",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [1050, 200]
+    }
+  ],
+  "connections": {
+    "Every Hour": {
+      "main": [[{ "node": "Get Pending Tickets", "type": "main", "index": 0 }]]
+    },
+    "Get Pending Tickets": {
+      "main": [[{ "node": "Assign Agent", "type": "main", "index": 0 }]]
+    },
+    "Assign Agent": {
+      "main": [[{ "node": "Update Ticket", "type": "main", "index": 0 }]]
+    },
+    "Update Ticket": {
+      "main": [[{ "node": "Notify Slack", "type": "main", "index": 0 }]]
+    }
+  }
+}

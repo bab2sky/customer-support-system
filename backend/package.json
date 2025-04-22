@@ -1,0 +1,17 @@
+{
+  "name": "gpt-backend",
+  "version": "1.0.0",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "axios-retry": "^3.3.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mysql2": "^2.3.3",
+    "node-telegram-bot-api": "^0.61.0",
+    "nodemailer": "^6.9.4",
+    "prom-client": "^14.1.1",
+    "sentiment": "^5.0.1"
+  }
+}
