@@ -1,4 +1,36 @@
+const Sentry = require("@sentry/node");
+Sentry.init({ dsn: process.env.SENTRY_DSN });
+app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.errorHandler());
+
 require("dotenv").config();
+// ───────────────────────────────────────────────────────────────────────────────
+// 필수 환경변수 검증
+const requiredEnv = [
+   "API_KEY_FILE",
+   "OPENAI_API_KEY_FILE",
+   "RAG_URL",
+   "MCP_URL",
+   "SMTP_HOST",
+   "SMTP_PORT",
+   "SMTP_SECURE",
+   "SMTP_USER",
+   "SMTP_PASS_FILE",
+   "TELEGRAM_TOKEN_FILE",
+   "TELEGRAM_CHAT_ID_FILE",
+   "ADMIN_EMAIL",
+   "DB_HOST",
+   "DB_USER",
+   "DB_PASSWORD_FILE",
+   "DB_NAME"
+];
+requiredEnv.forEach((key) => {
+  if (!process.env[key]) {
+    console.error(`⛔ Missing required ENV: ${key}`);
+    process.exit(1);
+  }
+});
+// ───────────────────────────────────────────────────────────────────────────────
 const express = require("express");
 const axios = require("axios");
 const retry = require("axios-retry");
@@ -213,3 +245,9 @@ app.post("/chat", async (req, res) => {
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`GPT backend running on port ${PORT}`));
+
+
+if (require.main !== module) {
+  module.exports = app;  // tests에서 import 가능하도록
+}
+

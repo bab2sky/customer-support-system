@@ -1,3 +1,6 @@
+import sentry_sdk
+sentry_sdk.init(dsn=os.getenv("SENTRY_DSN"))
+
 import os
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
@@ -8,6 +11,19 @@ from qdrant_client import QdrantClient
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# ───────────────────────────────────────────────────────────────────────────────
+# 필수 환경변수 검증
+for var in [
+    "API_KEY_FILE",
+    "OPENAI_API_KEY_FILE",
+    "QDRANT_HOST",
+    "QDRANT_PORT"
+]:
+    if not os.getenv(var):
+        raise RuntimeError(f"⛔ Environment variable {var} is required")
+# ───────────────────────────────────────────────────────────────────────────────
+
 API_KEY = open(os.getenv("API_KEY_FILE")).read().strip()
 OPENAI_API_KEY = open(os.getenv("OPENAI_API_KEY_FILE")).read().strip()
 
@@ -40,3 +56,6 @@ def rag_search(body: Query):
         raise HTTPException(status_code=404, detail="No docs")
     summary = "\n".join(d.page_content for d in results)
     return {"summary": summary}
+	
+@app.get("/healthz")
+async def health(): return "OK"	
